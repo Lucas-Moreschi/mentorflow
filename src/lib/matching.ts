@@ -1,4 +1,3 @@
-import { unstable_cache } from "next/cache";
 import { prisma } from "./prisma";
 import { gemini } from "./gemini";
 import type { MentorMatch } from "@/types/mentorship";
@@ -100,38 +99,43 @@ export async function rankMentors(studentId: string): Promise<MentorMatch[]> {
 
     if (studentProfile) {
       const topMatches = ranked.slice(0, 5);
-      const explanations = await Promise.allSettled(
-        topMatches.map((match) =>
-          getCachedExplanation(studentId, match.mentor.id, studentProfile, match.mentor.mentorProfile!, match.matchScore)
-        )
-      );
 
-      topMatches.forEach((match, i) => {
-        const result = explanations[i];
-        if (result.status === "fulfilled") {
-          match.explanation = result.value;
-        } else {
-          console.error("generateMatchExplanation failed for", match.mentor.id, result.reason);
-        }
+      // Load all cached explanations in one query
+      const cached = await prisma.matchExplanationCache.findMany({
+        where: {
+          studentId,
+          mentorId: { in: topMatches.map((m) => m.mentor.id) },
+        },
       });
+      const cacheMap = new Map(cached.map((c) => [c.mentorId, c.explanation]));
+
+      // Only call API for mentors not yet cached
+      for (const match of topMatches) {
+        const hit = cacheMap.get(match.mentor.id);
+        if (hit) {
+          match.explanation = hit;
+          continue;
+        }
+        try {
+          const explanation = await generateMatchExplanation(
+            studentProfile,
+            match.mentor.mentorProfile!,
+            match.matchScore
+          );
+          match.explanation = explanation;
+          await prisma.matchExplanationCache.upsert({
+            where: { studentId_mentorId: { studentId, mentorId: match.mentor.id } },
+            create: { studentId, mentorId: match.mentor.id, explanation },
+            update: { explanation, createdAt: new Date() },
+          });
+        } catch (err) {
+          console.error("generateMatchExplanation failed for", match.mentor.id, err);
+        }
+      }
     }
   }
 
   return ranked;
-}
-
-function getCachedExplanation(
-  studentId: string,
-  mentorId: string,
-  student: { goals: string; skills: string[]; areasOfInterest: string[]; desiredRole: string | null },
-  mentor: { expertise: string; skills: string[]; areasOfExpertise: string[]; currentRole: string | null; company: string | null },
-  matchScore: number
-) {
-  return unstable_cache(
-    () => generateMatchExplanation(student, mentor, matchScore),
-    [`match-explanation-${studentId}-${mentorId}`],
-    { revalidate: 3600 }
-  )();
 }
 
 async function generateMatchExplanation(

@@ -133,3 +133,13 @@ model Feedback {
 
   @@map("feedbacks")
 }
+
+model MatchExplanationCache {
+  studentId   String
+  mentorId    String
+  explanation String
+  createdAt   DateTime @default(now())
+
+  @@id([studentId, mentorId])
+  @@map("match_explanation_cache")
+}

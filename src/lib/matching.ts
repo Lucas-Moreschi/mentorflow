@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { prisma } from "./prisma";
 import { gemini } from "./gemini";
 import type { MentorMatch } from "@/types/mentorship";
@@ -101,7 +102,7 @@ export async function rankMentors(studentId: string): Promise<MentorMatch[]> {
       const topMatches = ranked.slice(0, 5);
       const explanations = await Promise.allSettled(
         topMatches.map((match) =>
-          generateMatchExplanation(studentProfile, match.mentor.mentorProfile!, match.matchScore)
+          getCachedExplanation(studentId, match.mentor.id, studentProfile, match.mentor.mentorProfile!, match.matchScore)
         )
       );
 
@@ -119,12 +120,26 @@ export async function rankMentors(studentId: string): Promise<MentorMatch[]> {
   return ranked;
 }
 
+function getCachedExplanation(
+  studentId: string,
+  mentorId: string,
+  student: { goals: string; skills: string[]; areasOfInterest: string[]; desiredRole: string | null },
+  mentor: { expertise: string; skills: string[]; areasOfExpertise: string[]; currentRole: string | null; company: string | null },
+  matchScore: number
+) {
+  return unstable_cache(
+    () => generateMatchExplanation(student, mentor, matchScore),
+    [`match-explanation-${studentId}-${mentorId}`],
+    { revalidate: 3600 }
+  )();
+}
+
 async function generateMatchExplanation(
   student: { goals: string; skills: string[]; areasOfInterest: string[]; desiredRole: string | null },
   mentor: { expertise: string; skills: string[]; areasOfExpertise: string[]; currentRole: string | null; company: string | null },
   matchScore: number
 ): Promise<string> {
-  const model = gemini.getGenerativeModel({ model: "gemini-2.0-flash" });
+  const model = gemini.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
 
   const prompt = `Analyze this student-mentor compatibility and explain in 2-3 concise sentences why they are a good match. Be specific and concrete, referencing their actual skills and goals. Write in Portuguese (Brazil).
 

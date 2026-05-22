@@ -7,9 +7,9 @@ Plataforma de mentoria inteligente que conecta estudantes e mentores usando IA s
 - **Next.js 15** (App Router) + **TypeScript**
 - **PostgreSQL** com extensão **pgvector** (embeddings de IA)
 - **Prisma ORM**
-- **NextAuth.js v5** (autenticação com credentials)
+- **NextAuth.js v5** (autenticação com credentials + JWT)
 - **Socket.io** (chat em tempo real via servidor customizado)
-- **OpenAI** (text-embedding-3-small + gpt-4o-mini para matching)
+- **Google Gemini** (`gemini-embedding-001` para embeddings + `gemini-2.0-flash` para matching)
 - **TailwindCSS** + **Shadcn/UI**
 - **Zustand** (estado global)
 - **Docker** (PostgreSQL com pgvector)
@@ -18,7 +18,7 @@ Plataforma de mentoria inteligente que conecta estudantes e mentores usando IA s
 
 - Node.js 18+
 - Docker e Docker Compose
-- Conta OpenAI (opcional, mas necessária para matching por IA)
+- Chave de API do Google Gemini (gratuita em [aistudio.google.com](https://aistudio.google.com/app/apikey))
 
 ## Como rodar
 
@@ -46,9 +46,11 @@ DATABASE_URL="postgresql://mentorflow:mentorflow_secret@localhost:5433/mentorflo
 AUTH_SECRET="seu-secret-aqui"
 NEXTAUTH_URL="http://localhost:3000"
 
-# OpenAI (necessário para matching por IA)
-OPENAI_API_KEY="sk-..."
+# Google Gemini (necessário para matching por IA)
+GEMINI_API_KEY="sua-chave-aqui"
 ```
+
+> **Next.js runtime:** copie o mesmo `.env` para `.env.local` para que as variáveis fiquem disponíveis no servidor Next.js.
 
 ### 3. Suba o banco de dados
 
@@ -69,6 +71,8 @@ npm run db:migrate
 ```bash
 npm run db:seed
 ```
+
+> O seed gera embeddings via API do Gemini. Certifique-se de que `GEMINI_API_KEY` está configurada.
 
 **Contas de teste** (senha: `password123`):
 
@@ -114,11 +118,11 @@ npm run db:studio  # Abre o Prisma Studio (GUI do banco)
 
 O sistema de matching funciona em 3 etapas:
 
-1. **Embedding de perfil**: Ao salvar o perfil, um texto descritivo é construído (objetivos, habilidades, interesses) e enviado à API da OpenAI para gerar um vetor de 1536 dimensões, salvo no PostgreSQL via `pgvector`.
+1. **Embedding de perfil**: Ao salvar o perfil, um texto descritivo é construído (objetivos, habilidades, interesses) e enviado à API do Google Gemini (`gemini-embedding-001`) para gerar um vetor de **3072 dimensões**, salvo no PostgreSQL via `pgvector`.
 
 2. **Busca por similaridade**: A query usa o operador `<=>` (distância cosseno) do pgvector para encontrar os mentores mais próximos semanticamente do perfil do estudante.
 
-3. **Explicação por LLM**: Para os top 10 matches, o `gpt-4o-mini` gera uma explicação personalizada em português explicando por que o mentor é um bom match.
+3. **Explicação por LLM**: Para os top matches, o `gemini-2.0-flash` gera uma explicação personalizada em português explicando por que o mentor é um bom match.
 
 ### Chat em Tempo Real
 
@@ -133,14 +137,14 @@ O `server.js` cria um servidor HTTP customizado que:
 src/
 ├── app/              # Next.js App Router
 │   ├── (auth)/       # Login, Registro
-│   ├── (app)/        # Área autenticada
+│   ├── app/          # Área autenticada (dashboard, chat, perfil...)
 │   └── api/          # API Routes
 ├── components/       # Componentes React
 │   ├── ui/           # Shadcn/UI
 │   ├── chat/         # Chat em tempo real
 │   ├── mentors/      # Browse de mentores
 │   └── ...
-├── lib/              # Utilitários (auth, prisma, openai, matching)
+├── lib/              # Utilitários (auth, prisma, gemini, matching)
 ├── hooks/            # React hooks (useSocket, useChat, useTyping)
 ├── stores/           # Zustand stores
 ├── schemas/          # Validação Zod
@@ -157,7 +161,7 @@ Para produção, atualize as variáveis de ambiente:
 DATABASE_URL="postgresql://user:pass@seu-servidor/mentorflow"
 AUTH_SECRET="secret-de-producao-seguro"
 NEXTAUTH_URL="https://seu-dominio.com"
-OPENAI_API_KEY="sk-..."
+GEMINI_API_KEY="sua-chave-aqui"
 NODE_ENV="production"
 ```
 

@@ -2,6 +2,16 @@ import { prisma } from "./prisma";
 import { gemini } from "./gemini";
 import type { MentorMatch } from "@/types/mentorship";
 
+// Circuit breaker: after a 429, stop trying for 60 minutes
+const globalForCB = globalThis as unknown as { quotaExhaustedAt?: number };
+function isQuotaExhausted() {
+  return globalForCB.quotaExhaustedAt !== undefined &&
+    Date.now() - globalForCB.quotaExhaustedAt < 60 * 60 * 1000;
+}
+function markQuotaExhausted() {
+  globalForCB.quotaExhaustedAt = Date.now();
+}
+
 interface RawMentorResult {
   user_id: string;
   name: string;
@@ -109,13 +119,14 @@ export async function rankMentors(studentId: string): Promise<MentorMatch[]> {
       });
       const cacheMap = new Map(cached.map((c) => [c.mentorId, c.explanation]));
 
-      // Only call API for mentors not yet cached
+      // Only call API for mentors not yet cached, and only if quota is available
       for (const match of topMatches) {
         const hit = cacheMap.get(match.mentor.id);
         if (hit) {
           match.explanation = hit;
           continue;
         }
+        if (isQuotaExhausted()) break;
         try {
           const explanation = await generateMatchExplanation(
             studentProfile,
@@ -128,8 +139,9 @@ export async function rankMentors(studentId: string): Promise<MentorMatch[]> {
             create: { studentId, mentorId: match.mentor.id, explanation },
             update: { explanation, createdAt: new Date() },
           });
-        } catch (err) {
-          console.error("generateMatchExplanation failed for", match.mentor.id, err);
+        } catch (err: any) {
+          if (err?.message?.includes("429")) markQuotaExhausted();
+          else console.error("generateMatchExplanation failed for", match.mentor.id, err);
         }
       }
     }

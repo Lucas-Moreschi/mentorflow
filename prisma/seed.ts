@@ -442,6 +442,29 @@ async function main() {
     data: { averageRating: 4.9, totalReviews: 19 },
   });
 
+  // ── Pre-populate match explanation cache (avoids API calls on first load) ─
+  const explanations = [
+    // João × mentors
+    { studentId: student1.id, mentorId: mentor1.id, explanation: "Ana Silva é a mentora ideal para João: como Staff Engineer no Nubank com 12 anos em sistemas distribuídos e backend Go/Kotlin, ela tem exatamente a expertise que João precisa para evoluir de dev júnior a engenheiro sênior. A combinação de PostgreSQL, Docker e arquitetura de alta disponibilidade que Ana domina se alinha perfeitamente com os desafios de performance que João enfrenta no dia a dia." },
+    { studentId: student1.id, mentorId: mentor4.id, explanation: "Roberto Lima complementa perfeitamente o perfil de João com sua expertise em DevOps, Kubernetes e CI/CD — áreas que João ainda não explorou mas que são fundamentais para um engenheiro backend sênior. Com 10 anos na Stone focados em infraestrutura como código e migração para microsserviços, Roberto pode dar a João a visão completa do ciclo de vida de um sistema em produção." },
+    { studentId: student1.id, mentorId: mentor2.id, explanation: "Carlos Mendes traz uma perspectiva valiosa para João: como Tech Lead no iFood com foco em performance web e sistemas escaláveis, Carlos pode ajudá-lo a entender como as decisões de frontend impactam o backend e como pensar em arquitetura de ponta a ponta. Sua experiência com GraphQL e design systems complementa bem o background de Node.js de João." },
+    // Mariana × mentors
+    { studentId: student2.id, mentorId: mentor3.id, explanation: "Patrícia Rocha é a mentora perfeita para Mariana: com PhD em IA, experiência em NLP e MLOps no Mercado Livre, ela percorreu exatamente o caminho que Mariana quer trilhar — de análise de dados para ML Engineering. A sólida base em estatística de Mariana aliada à orientação de Patrícia sobre PyTorch, pipelines de produção e estruturação de portfólio é uma combinação extremamente poderosa." },
+    { studentId: student2.id, mentorId: mentor1.id, explanation: "Ana Silva oferece à Mariana uma perspectiva única: como engenheira que constrói sistemas de alta escala que consomem modelos de ML em produção, Ana pode ensinar Mariana a pensar nos requisitos de engenharia que os sistemas de ML precisam atender. Entender como o backend lida com inferência em tempo real vai tornar Mariana uma ML Engineer muito mais completa e valorizada no mercado." },
+    // Pedro × mentors
+    { studentId: student3.id, mentorId: mentor2.id, explanation: "Carlos Mendes é o mentor ideal para Pedro: ele fez exatamente a transição que Pedro deseja — de desenvolvedor frontend sênior para Tech Lead no iFood. Com experiência em liderar times que constroem produtos para 20 milhões de usuários, Carlos pode ensinar Pedro tanto as habilidades técnicas quanto as soft skills essenciais para ser um líder eficaz e respeitado." },
+    { studentId: student3.id, mentorId: mentor5.id, explanation: "Fernanda Costa complementa perfeitamente a jornada de Pedro para Tech Lead: como Senior PM na Conta Azul com experiência em conectar times técnicos e de produto, ela pode ensinar Pedro a falar a língua do negócio, priorizar com dados e se tornar uma ponte entre engenharia e produto — habilidade indispensável para tech leads que querem ter impacto real." },
+  ];
+
+  for (const e of explanations) {
+    await prisma.matchExplanationCache.upsert({
+      where: { studentId_mentorId: { studentId: e.studentId, mentorId: e.mentorId } },
+      create: e,
+      update: { explanation: e.explanation },
+    });
+  }
+  console.log("💡 Match explanation cache pre-populated.");
+
   // Generate Gemini embeddings for all profiles
   if (process.env.GEMINI_API_KEY) {
     console.log("🤖 Generating AI embeddings...");

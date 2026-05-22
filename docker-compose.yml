@@ -1,0 +1,22 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: mentorflow_db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-mentorflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mentorflow_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-mentorflow}
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mentorflow}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:

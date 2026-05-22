@@ -1,0 +1,135 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgvector(map: "vector")]
+}
+
+enum Role {
+  STUDENT
+  MENTOR
+}
+
+enum MentorshipStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  REJECTED
+  CANCELLED
+}
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  hashedPassword String
+  name           String
+  role           Role
+  avatarUrl      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  studentProfile StudentProfile?
+  mentorProfile  MentorProfile?
+
+  mentorshipsAsStudent Mentorship[] @relation("StudentMentorships")
+  mentorshipsAsMentor  Mentorship[] @relation("MentorMentorships")
+
+  @@map("users")
+}
+
+model StudentProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  bio             String?
+  goals           String   @default("")
+  currentRole     String?
+  desiredRole     String?
+  skills          String[]
+  areasOfInterest String[]
+  linkedinUrl     String?
+  githubUrl       String?
+  embedding       Unsupported("vector(3072)")?
+  embeddingUpdatedAt DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("student_profiles")
+}
+
+model MentorProfile {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  bio              String?
+  expertise        String   @default("")
+  skills           String[]
+  areasOfExpertise String[]
+  yearsExperience  Int      @default(0)
+  currentRole      String?
+  company          String?
+  maxStudents      Int      @default(3)
+  linkedinUrl      String?
+  githubUrl        String?
+  averageRating    Float    @default(0)
+  totalReviews     Int      @default(0)
+  embedding        Unsupported("vector(3072)")?
+  embeddingUpdatedAt DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("mentor_profiles")
+}
+
+model Mentorship {
+  id              String           @id @default(cuid())
+  studentId       String
+  mentorId        String
+  status          MentorshipStatus @default(PENDING)
+  message         String?
+  topic           String?
+  rejectionReason String?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  student  User      @relation("StudentMentorships", fields: [studentId], references: [id])
+  mentor   User      @relation("MentorMentorships", fields: [mentorId], references: [id])
+  messages Message[]
+  feedback Feedback?
+
+  @@map("mentorships")
+}
+
+model Message {
+  id           String   @id @default(cuid())
+  mentorshipId String
+  senderId     String
+  content      String
+  createdAt    DateTime @default(now())
+
+  mentorship Mentorship @relation(fields: [mentorshipId], references: [id], onDelete: Cascade)
+
+  @@index([mentorshipId, createdAt])
+  @@map("messages")
+}
+
+model Feedback {
+  id           String   @id @default(cuid())
+  mentorshipId String   @unique
+  reviewerId   String
+  rating       Int
+  comment      String?
+  createdAt    DateTime @default(now())
+
+  mentorship Mentorship @relation(fields: [mentorshipId], references: [id], onDelete: Cascade)
+
+  @@map("feedbacks")
+}

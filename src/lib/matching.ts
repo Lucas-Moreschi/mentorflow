@@ -124,7 +124,7 @@ async function generateMatchExplanation(
   mentor: { expertise: string; skills: string[]; areasOfExpertise: string[]; currentRole: string | null; company: string | null },
   matchScore: number
 ): Promise<string> {
-  const model = gemini.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = gemini.getGenerativeModel({ model: "gemini-2.0-flash" });
 
   const prompt = `Analyze this student-mentor compatibility and explain in 2-3 concise sentences why they are a good match. Be specific and concrete, referencing their actual skills and goals. Write in Portuguese (Brazil).
 

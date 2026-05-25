@@ -436,10 +436,167 @@ async function main() {
     },
   });
 
+  // ── Extra students for Fernanda's mentorships ────────────────────────────
+  const student4 = await prisma.user.upsert({
+    where: { email: "lucas.pm@mentorflow.dev" },
+    update: {},
+    create: {
+      email: "lucas.pm@mentorflow.dev",
+      hashedPassword: password,
+      name: "Lucas Ferreira",
+      role: "STUDENT",
+      studentProfile: {
+        create: {
+          bio: "Desenvolvedor backend que quer migrar para gestão de produto.",
+          goals: "Tenho 4 anos de experiência como desenvolvedor e quero transicionar para Product Manager. Preciso entender discovery, métricas, como priorizar roadmap e como trabalhar com times de design e engenharia do ponto de vista de produto.",
+          currentRole: "Desenvolvedor Backend Pleno",
+          desiredRole: "Product Manager",
+          skills: ["Python", "SQL", "APIs REST", "Git"],
+          areasOfInterest: ["Product Management", "Career Transition", "Agile", "UX Research"],
+          linkedinUrl: "https://linkedin.com/in/lucasferreira",
+        },
+      },
+    },
+  });
+
+  const student5 = await prisma.user.upsert({
+    where: { email: "sofia.ux@mentorflow.dev" },
+    update: {},
+    create: {
+      email: "sofia.ux@mentorflow.dev",
+      hashedPassword: password,
+      name: "Sofia Martins",
+      role: "STUDENT",
+      studentProfile: {
+        create: {
+          bio: "UX Designer buscando entender melhor o lado de produto e estratégia.",
+          goals: "Sou UX Designer há 3 anos e quero crescer para Product Designer ou Associate PM. Preciso aprender a usar dados para embasar decisões de design, entender OKRs e como influenciar o roadmap de produto.",
+          currentRole: "UX Designer",
+          desiredRole: "Product Designer / Associate PM",
+          skills: ["Figma", "User Research", "Prototipação", "Design Thinking"],
+          areasOfInterest: ["Product Management", "UX Research", "OKRs", "Data Analysis"],
+          linkedinUrl: "https://linkedin.com/in/sofiamartins",
+        },
+      },
+    },
+  });
+
+  const student6 = await prisma.user.upsert({
+    where: { email: "rafael.agile@mentorflow.dev" },
+    update: {},
+    create: {
+      email: "rafael.agile@mentorflow.dev",
+      hashedPassword: password,
+      name: "Rafael Cunha",
+      role: "STUDENT",
+      studentProfile: {
+        create: {
+          bio: "Scrum Master querendo evoluir para a área de produto.",
+          goals: "Trabalho como Scrum Master e quero me tornar Product Owner ou PM. Já entendo bem o processo ágil e tenho contato com stakeholders, mas preciso de orientação para desenvolver visão de produto, construir roadmap e trabalhar com métricas de negócio.",
+          currentRole: "Scrum Master",
+          desiredRole: "Product Owner",
+          skills: ["Scrum", "Kanban", "Jira", "Facilitação"],
+          areasOfInterest: ["Product Management", "OKRs", "Agile", "Stakeholder Management"],
+        },
+      },
+    },
+  });
+
+  // ── Fernanda: COMPLETED mentorship with Lucas ────────────────────────────
+  const mentorship7 = await prisma.mentorship.upsert({
+    where: { id: "seed-mentorship-7" },
+    update: {},
+    create: {
+      id: "seed-mentorship-7",
+      studentId: student4.id,
+      mentorId: mentor5.id,
+      status: "COMPLETED",
+      topic: "Transição de dev para Product Manager",
+      message: "Fernanda, seu histórico de trabalhar próximo a times de engenharia é exatamente o que me falta como referência. Gostaria de aprender como fazer essa transição de dev para PM.",
+      startedAt: d(90),
+      completedAt: d(20),
+    },
+  });
+
+  await prisma.message.createMany({
+    skipDuplicates: true,
+    data: [
+      { id: "m7-01", mentorshipId: mentorship7.id, senderId: mentor5.id, createdAt: d(89), content: "Oi Lucas! Desenvolvedores que viram PMs são incríveis — vocês conseguem estimar esforço real e têm credibilidade com o time de engenharia. Primeira pergunta: por que você quer sair do código?" },
+      { id: "m7-02", mentorshipId: mentorship7.id, senderId: student4.id, createdAt: d(89, 50), content: "Sempre me interessei mais pelo 'por quê' do que pelo 'como'. Fico frustrado quando construímos features que ninguém usa. Quero estar na origem das decisões." },
+      { id: "m7-03", mentorshipId: mentorship7.id, senderId: mentor5.id, createdAt: d(88), content: "Esse é exatamente o mindset certo. Vamos começar pelo básico: você já tem acesso a dados de uso do produto atual? Quero que você me traga os 3 flows com maior drop-off." },
+      { id: "m7-04", mentorshipId: mentorship7.id, senderId: student4.id, createdAt: d(75), content: "Peguei os dados! O checkout tem 68% de abandono no passo de endereço. Fiz uma análise no SQL e parece que usuários mobile abandonam 2x mais que desktop." },
+      { id: "m7-05", mentorshipId: mentorship7.id, senderId: mentor5.id, createdAt: d(74), content: "Excelente! Agora você precisa formular uma hipótese e propor um experimento. Tente: 'Se simplificarmos o formulário de endereço no mobile, reduzimos o abandono em X%'. Isso é pensar como PM." },
+      { id: "m7-06", mentorshipId: mentorship7.id, senderId: student4.id, createdAt: d(60), content: "Apresentei a hipótese para o meu PM e ele me convidou para participar do planejamento da próxima sprint. Disse que minha análise foi a mais fundamentada que ele já viu vir de um dev." },
+      { id: "m7-07", mentorshipId: mentorship7.id, senderId: mentor5.id, createdAt: d(59), content: "Isso é ouro, Lucas! Você já está atuando como PM sem ter o título. Agora vamos construir seu portfólio: documente esse case com contexto, hipótese, experimento e resultado esperado." },
+      { id: "m7-08", mentorshipId: mentorship7.id, senderId: student4.id, createdAt: d(30), content: "Fernanda, tenho uma entrevista para Associate PM amanhã! A empresa viu meu portfólio no LinkedIn. Consigo um tempo para um mock interview?" },
+      { id: "m7-09", mentorshipId: mentorship7.id, senderId: mentor5.id, createdAt: d(29), content: "Claro! Vou te mandar as perguntas mais comuns: 'Qual produto você melhoraria?', 'Como priorizaria esse roadmap?' e 'Me conte sobre um conflito com engenharia'. Prepare cases reais para cada uma." },
+      { id: "m7-10", mentorshipId: mentorship7.id, senderId: student4.id, createdAt: d(21), content: "PASSEI! Começo na semana que vem como Associate PM. Fernanda, sem você eu não teria nem chegado na entrevista. Muito obrigado de verdade!" },
+      { id: "m7-11", mentorshipId: mentorship7.id, senderId: mentor5.id, createdAt: d(20), content: "Lucas!!! Que notícia incrível! Você foi brilhante — eu só te dei o caminho, você fez todo o trabalho. Vai com tudo, e qualquer dúvida nos primeiros meses pode me chamar!" },
+    ],
+  });
+
+  await prisma.feedback.upsert({
+    where: { mentorshipId: mentorship7.id },
+    update: {},
+    create: {
+      mentorshipId: mentorship7.id,
+      reviewerId: student4.id,
+      rating: 5,
+      comment: "Fernanda foi transformadora na minha jornada. Ela não me ensinou só sobre produto — me ensinou a pensar diferente. Em 3 meses passei de dev frustrado para Associate PM contratado. A metodologia dela de aprender fazendo é incrível.",
+    },
+  });
+
+  // ── Fernanda: ACTIVE mentorship with Sofia ───────────────────────────────
+  const mentorship8 = await prisma.mentorship.upsert({
+    where: { id: "seed-mentorship-8" },
+    update: {},
+    create: {
+      id: "seed-mentorship-8",
+      studentId: student5.id,
+      mentorId: mentor5.id,
+      status: "ACTIVE",
+      topic: "Evoluir de UX Designer para Product Designer com visão de produto",
+      message: "Fernanda, como PM com background próximo a design, você é a pessoa certa para me ajudar a crescer além do Figma e entender como influenciar decisões de produto.",
+      startedAt: d(18),
+    },
+  });
+
+  await prisma.message.createMany({
+    skipDuplicates: true,
+    data: [
+      { id: "m8-01", mentorshipId: mentorship8.id, senderId: mentor5.id, createdAt: d(17), content: "Oi Sofia! Product Designer é um dos perfis mais valorizados no mercado agora. A diferença para UX Designer é que você também é dona do 'o quê' e não só do 'como'. Me conta: você já questiona as features que recebe para desenhar?" },
+      { id: "m8-02", mentorshipId: mentorship8.id, senderId: student5.id, createdAt: d(17, 45), content: "Às vezes sim, mas sinto que não tenho autoridade para isso. Os PMs passam o brief e eu executo. Quero ter mais voz no processo." },
+      { id: "m8-03", mentorshipId: mentorship8.id, senderId: mentor5.id, createdAt: d(16), content: "Autoridade se constrói com dados. Na próxima vez que receber um brief, pergunte: 'Qual métrica essa feature vai mover?' Se o PM não souber responder, você já ganhou espaço para contribuir." },
+      { id: "m8-04", mentorshipId: mentorship8.id, senderId: student5.id, createdAt: d(12), content: "Fiz isso! O PM ficou surpreso, mas adorou a pergunta. Acabamos redefinindo o escopo da feature juntos. Senti pela primeira vez que estava colaborando, não só executando." },
+      { id: "m8-05", mentorshipId: mentorship8.id, senderId: mentor5.id, createdAt: d(11), content: "Perfeito! Isso é Product Design na prática. Agora quero que você aprenda a fazer user research com lente de negócio: não só 'o usuário tem dificuldade aqui' mas 'essa dificuldade custa X% de conversão'." },
+      { id: "m8-06", mentorshipId: mentorship8.id, senderId: student5.id, createdAt: d(5), content: "Fiz uma pesquisa com 15 usuários e correlacionei com dados de analytics. O resultado foi tão forte que o PM apresentou para o CEO. Meu nome estava nos slides!" },
+      { id: "m8-07", mentorshipId: mentorship8.id, senderId: mentor5.id, createdAt: d(4), content: "Isso é exatamente o que separa um Product Designer de um UX Designer. Você está no caminho certo. Próximo passo: vamos trabalhar em como você apresenta trade-offs de design para stakeholders não-técnicos." },
+    ],
+  });
+
+  // ── Fernanda: PENDING request from Rafael ────────────────────────────────
+  await prisma.mentorship.upsert({
+    where: { id: "seed-mentorship-9" },
+    update: {},
+    create: {
+      id: "seed-mentorship-9",
+      studentId: student6.id,
+      mentorId: mentor5.id,
+      status: "PENDING",
+      topic: "Transição de Scrum Master para Product Owner",
+      message: "Fernanda, como Scrum Master tenho contato diário com produto mas sem autoridade para decidir. Você tem experiência em PM e gestão de produto — adoraria sua orientação para dar esse próximo passo na carreira.",
+    },
+  });
+
   // ── Update ratings ────────────────────────────────────────────────────────
   await prisma.mentorProfile.update({
     where: { userId: mentor2.id },
     data: { averageRating: 4.9, totalReviews: 19 },
+  });
+
+  await prisma.mentorProfile.update({
+    where: { userId: mentor5.id },
+    data: { averageRating: 4.7, totalReviews: 32 },
   });
 
   // ── Pre-populate match explanation cache (avoids API calls on first load) ─
@@ -454,6 +611,12 @@ async function main() {
     // Pedro × mentors
     { studentId: student3.id, mentorId: mentor2.id, explanation: "Carlos Mendes é o mentor ideal para Pedro: ele fez exatamente a transição que Pedro deseja — de desenvolvedor frontend sênior para Tech Lead no iFood. Com experiência em liderar times que constroem produtos para 20 milhões de usuários, Carlos pode ensinar Pedro tanto as habilidades técnicas quanto as soft skills essenciais para ser um líder eficaz e respeitado." },
     { studentId: student3.id, mentorId: mentor5.id, explanation: "Fernanda Costa complementa perfeitamente a jornada de Pedro para Tech Lead: como Senior PM na Conta Azul com experiência em conectar times técnicos e de produto, ela pode ensinar Pedro a falar a língua do negócio, priorizar com dados e se tornar uma ponte entre engenharia e produto — habilidade indispensável para tech leads que querem ter impacto real." },
+    // Lucas × mentors
+    { studentId: student4.id, mentorId: mentor5.id, explanation: "Fernanda Costa é a mentora perfeita para Lucas: como Senior PM que já trabalhou lado a lado com engenheiros, ela entende exatamente as dificuldades de quem vem do código e quer entrar em produto. Sua experiência em discovery, métricas e roadmap estratégico vai dar a Lucas as ferramentas práticas que ele precisa para fazer a transição com credibilidade." },
+    // Sofia × mentors
+    { studentId: student5.id, mentorId: mentor5.id, explanation: "Fernanda Costa é ideal para Sofia: com experiência em gestão de produto e trabalho próximo a times de design, ela pode ensinar Sofia a pensar além do Figma — usando dados, OKRs e visão estratégica para influenciar decisões de produto. A combinação do olhar de UX de Sofia com a mentalidade de PM de Fernanda é muito poderosa." },
+    // Rafael × mentors
+    { studentId: student6.id, mentorId: mentor5.id, explanation: "Fernanda Costa é a mentora certa para Rafael: seu perfil de PM com foco em estratégia e roadmap é exatamente o que Rafael precisa para evoluir de Scrum Master para Product Owner. Como alguém que já trabalhou com metodologias ágeis e stakeholders, Fernanda pode ensinar Rafael a usar sua experiência em facilitação como vantagem competitiva na área de produto." },
   ];
 
   for (const e of explanations) {
@@ -535,6 +698,9 @@ async function main() {
   console.log("   Mentor:    patricia.rocha@mentorflow.dev");
   console.log("   Mentor:    roberto.lima@mentorflow.dev");
   console.log("   Mentor:    fernanda.costa@mentorflow.dev");
+  console.log("   Estudante: lucas.pm@mentorflow.dev");
+  console.log("   Estudante: sofia.ux@mentorflow.dev");
+  console.log("   Estudante: rafael.agile@mentorflow.dev");
 }
 
 main()
